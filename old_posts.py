@@ -1,6 +1,11 @@
-import requests
-import dateutil.parser
 import datetime
+import os
+import sys
+import uuid
+
+import requests
+
+import dateutil.parser
 
 sites = {
     'tralev': 'https://tralev.net',
@@ -32,7 +37,10 @@ def get_years_ago(date):
     return today.year - date.year
 
 def main():
+    messages = []
     for s in sites:
+        print("today is", today)
+        print("checking", s)
         posts = get_posts(sites[s])
         for p in posts:
             post_date = get_date(p['date'])
@@ -40,9 +48,20 @@ def main():
             if post_date.month == today.month and post_date.day == today.day:
                 years_ago = get_years_ago(post_date)
                 if years_ago == 1:
-                    print("1 year ago I wrote about {0} {1}".format(p['title']['rendered'], p['link']))
+                    messages.append("1 year ago I wrote about {0} {1}".format(p['title']['rendered'], p['link']))
                 if years_ago > 1:
-                    print("{0} years ago I wrote about {1} {2}".format(years_ago, p['title']['rendered'], p['link']))
+                     messages.append("{0} years ago I wrote about {1} {2}".format(years_ago, p['title']['rendered'], p['link']))
+
+    if len(messages) == 0:
+        messages.append("No posts found for {0}".format(today))
+
+    return messages
+
+def handler(event, context):
+    messages = main()
+    return {
+        'messages': messages
+    }
 
 if __name__ == '__main__':
-    main()
+    print(main())
