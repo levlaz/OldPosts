@@ -1,7 +1,9 @@
+"""
+old_posts
+
+A script to figure out what blog post you wrote X years ago.
+"""
 import datetime
-import os
-import sys
-import uuid
 
 import requests
 
@@ -15,7 +17,7 @@ sites = {
 today = datetime.date.today()
 
 def get_posts(site):
-    response = requests.get("{0}/wp-json/wp/v2/posts".format(site))
+    response = requests.get("{0}/wp-json/wp/v2/posts?per_page=100".format(site))
 
     pages = int(response.headers['X-WP-TotalPages'])
     posts = []
@@ -64,4 +66,4 @@ def handler(event, context):
     }
 
 if __name__ == '__main__':
-    print(main())
+    main()
