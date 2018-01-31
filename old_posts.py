@@ -41,8 +41,6 @@ def get_years_ago(date):
 def main():
     messages = []
     for s in sites:
-        print("today is", today)
-        print("checking", s)
         posts = get_posts(sites[s])
         for p in posts:
             post_date = get_date(p['date'])
@@ -66,4 +64,4 @@ def handler(event, context):
     }
 
 if __name__ == '__main__':
-    main()
+    print(main())
