@@ -8,6 +8,7 @@ import datetime
 import requests
 
 import dateutil.parser
+from dateutil.relativedelta import relativedelta
 
 sites = {
     'tralev': 'https://tralev.net',
@@ -16,32 +17,37 @@ sites = {
 
 today = datetime.date.today()
 
-def get_posts(site):
-    response = requests.get("{0}/wp-json/wp/v2/posts?per_page=100".format(site))
+def get_all_posts(site):
+    # Ignore posts less than 1 year old.
+    before = (today - relativedelta(years=1) + relativedelta(days=1)).isoformat()
+    response = requests.head("{0}/wp-json/wp/v2/posts?per_page=100&before={1}T00:00:00".format(site, before))
 
     pages = int(response.headers['X-WP-TotalPages'])
     posts = []
 
+    # iterate over every page in response
     for i in range(1, pages+1):
-        response = requests.get("{0}/wp-json/wp/v2/posts?page={1}".format(site, i))
+        response = requests.get("{0}/wp-json/wp/v2/posts?per_page=100&page={1}&context=embed&before={2}T00:00:00".format(site, i, before))
 
-        for i in response.json():
-            posts.append(i)
+        posts.extend(response.json())
 
     return posts
 
 def get_date(date_string):
+    """ Extract python date from WP API post date. """
     post_date = dateutil.parser.parse(date_string)
     date = datetime.date(post_date.year, post_date.month, post_date.day)
     return date
 
 def get_years_ago(date):
+    """ Return how many years ago a date was """
     return today.year - date.year
 
 def main():
     messages = []
     for s in sites:
-        posts = get_posts(sites[s])
+        posts = get_all_posts(sites[s])
+
         for p in posts:
             post_date = get_date(p['date'])
 
@@ -58,6 +64,10 @@ def main():
     return messages
 
 def handler(event, context):
+    """
+    AWS Lambda Handler
+    https://docs.aws.amazon.com/lambda/latest/dg/python-programming-model-handler-types.html
+    """
     messages = main()
     return {
         'messages': messages
