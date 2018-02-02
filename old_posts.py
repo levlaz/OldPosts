@@ -4,6 +4,7 @@ old_posts
 A script to figure out what blog post you wrote X years ago.
 """
 import datetime
+import os
 
 import requests
 
@@ -16,6 +17,26 @@ sites = {
 }
 
 today = datetime.date.today()
+
+def get_buffer_profiles():
+    """
+    Return list of all connected profile ID's in Buffer Account
+    """
+    profiles = requests.get("https://api.bufferapp.com/1/profiles.json?access_token={0}".format(os.environ['BUFFER_TOKEN']))
+
+    return [s['id'] for s in profiles.json()]
+
+def create_buffer_update(update):
+
+    payload = {
+        'profile_ids[]': get_buffer_profiles(),
+        'text': update,
+        'top': 'True'
+    }
+
+    response = requests.post("https://api.bufferapp.com/1/updates/create.json?access_token={0}".format(os.environ['BUFFER_TOKEN']), data=payload)
+
+    return response.json()
 
 def get_all_posts(site):
     # Ignore posts less than 1 year old.
@@ -60,6 +81,9 @@ def main():
 
     if len(messages) == 0:
         messages.append("No posts found for {0}".format(today))
+    else:
+        for message in messages:
+            print(create_buffer_update(message))
 
     return messages
 
