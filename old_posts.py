@@ -5,6 +5,7 @@ A script to figure out what blog post you wrote X years ago.
 """
 import datetime
 import os
+import logging
 
 import requests
 
@@ -17,6 +18,8 @@ sites = {
 }
 
 today = datetime.date.today()
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 def get_buffer_profiles():
     """
@@ -24,7 +27,10 @@ def get_buffer_profiles():
     """
     profiles = requests.get("https://api.bufferapp.com/1/profiles.json?access_token={0}".format(os.environ['BUFFER_TOKEN']))
 
-    return [s['id'] for s in profiles.json()]
+    profile_ids = [s['id'] for s in profiles.json()]
+    logging.info("Found Buffer Profiles{0}".format(profile_ids))
+
+    return profile_ids
 
 def create_buffer_update(update):
 
@@ -35,6 +41,8 @@ def create_buffer_update(update):
     }
 
     response = requests.post("https://api.bufferapp.com/1/updates/create.json?access_token={0}".format(os.environ['BUFFER_TOKEN']), data=payload)
+
+    logging.info(response)
 
     return response.json()
 
@@ -67,6 +75,7 @@ def get_years_ago(date):
 def main():
     messages = []
     for s in sites:
+        logger.info("Checking {0}".format(s))
         posts = get_all_posts(sites[s])
 
         for p in posts:
@@ -83,7 +92,7 @@ def main():
         messages.append("No posts found for {0}".format(today))
     else:
         for message in messages:
-            print(create_buffer_update(message))
+            create_buffer_update(message)
 
     return messages
 

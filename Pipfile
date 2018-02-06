@@ -13,3 +13,4 @@ awscli = "*"
 [packages]
 
 "boto3" = "*"
+requests = "*"
